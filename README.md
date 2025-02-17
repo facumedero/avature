@@ -1,5 +1,7 @@
 # Avature
 
+Este proyecto es una implementación basada en el enunciado de [Avatureta](https://github.com/avatureta/hp-dev-jobberwocky_facumedero_214162).
+
 # hp-dev-jobberwocky
 
 You have been asked to implement **Jobberwocky** , a service that works as a store for job opportunities, where companies can share open positions.
