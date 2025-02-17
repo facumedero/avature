@@ -1,6 +1,11 @@
-## Ejecutar 
-pipenv run python main.py
+#Instalar Python
+https://www.python.org/downloads/
 
+## Ejecutar 
+# Correr API en el puerto 8000:
+uvicorn main:app --reload
+
+pipenv run python main.py
 
 ## Probar con Swagger UI
 Abre http://127.0.0.1:8000/docs
@@ -8,6 +13,13 @@ Busca el endpoint GET /jobs/search/
 Haz clic en Try it out
 Filtra por title, company o location
 Presiona Execute y verás trabajos internos + externos.
+
+#Suscribe
+#http://127.0.0.1:8000/subscribe/(body)
+{
+  "email": "facundomedero26@gmail.com",
+  "keyword": "Python"
+}
 
 ## Probar con Redoc
 Abre http://127.0.0.1:8000/redoc 
@@ -39,3 +51,44 @@ curl -X 'GET' 'http://127.0.0.1:8000/jobs/search/?location=Remote'
 
 ## Buscar todos los trabajos (internos + externos)
 curl -X 'GET' 'http://127.0.0.1:8000/jobs/search/'
+
+
+#Suscríbete con un email
+# { "email": "test@example.com", "keyword": "Python" }
+
+curl -X 'POST' \
+  'http://127.0.0.1:8000/subscribe/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "test@example.com",
+    "keyword": "Python"
+  }'
+
+
+## Ejecutar TESTS
+pipenv run pytest
+
+#Proceso de TDD
+TDD sigue estos tres pasos:
+
+Escribir una prueba que falle (porque aún no hemos implementado la funcionalidad).
+Escribir el código mínimo necesario para pasar la prueba.
+Refactorizar el código para mejorar su diseño sin cambiar su comportamiento.
+
+#Aplicando TDD a la solución
+Vamos a aplicar TDD a dos partes clave de tu solución:
+
+ - Crear trabajos (POST /jobs/)
+ - Suscripción a alertas (POST /subscribe/)
+
+Usaremos pytest y FastAPI TestClient para escribir y ejecutar las pruebas.
+
+
+Prueba |	Explicación
+- Obtener trabajos	    --> Verifica que el endpoint /jobs/ devuelve una lista con al menos un trabajo.
+- Buscar trabajos       --> 	Confirma que el endpoint /jobs/search/ devuelve una lista de resultados combinados.
+- Error en creación	    --> Intenta crear un trabajo sin todos los campos requeridos y espera un error 422.
+- Error en suscripción  --> 	Intenta suscribirse con un email inválido y espera un error 422.
+- Alertas de empleo	    -->  Simula una suscripción y la publicación de un trabajo para verificar que se generaría una alerta.
+
+
