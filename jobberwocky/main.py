@@ -5,6 +5,7 @@ from typing import List, Optional
 import uuid
 import logging
 import smtplib
+import xml.etree.ElementTree as ET
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -58,26 +59,55 @@ def search_jobs(
     location: Optional[str] = Query(None, min_length=2)
 ):
     results = jobs.copy()  # Copia trabajos internos
-    
-    # Obtener datos de jobberwocky-extra-source
+
+    # Obtener datos de la API externa
+    logging.info(f"Searching Jobs on: {EXTERNAL_JOBS_URL}")
+
     try:
         response = httpx.get(EXTERNAL_JOBS_URL, timeout=5)
-        if response.status_code == 200:
-            external_jobs = response.json()
-            for ext_job in external_jobs:
-                # Limpiar y estandarizar el formato
+        logging.info(f"Response Code: {response.status_code}")
+
+        if response.status_code != 200:
+            logging.error(f"Error fetching jobs: {response.status_code} - {response.text}")
+            return results  # Retornar solo trabajos internos en caso de error
+
+        try:
+            external_data = response.json()
+            logging.info(f"Received Data: {external_data}")  # Ver JSON recibido
+        except ValueError:
+            logging.error(f"Error parsing JSON: {response.text}")
+            return results  # Retornar solo trabajos internos si hay error en el JSON
+
+    except Exception as e:
+        logging.error(f"Connection error: {e}")
+        return results  # Retornar solo trabajos internos si falla la conexión
+
+    # Procesar los trabajos de la API externa
+    for country, job_list in external_data.items():
+        for job_entry in job_list:
+            if isinstance(job_entry, list) and len(job_entry) == 3:
+                job_title, salary, skills_xml = job_entry
+
+                # Convertir XML de habilidades a una lista de strings
+                try:
+                    root = ET.fromstring(skills_xml)
+                    skills = [skill.text for skill in root.findall(".//skill")]
+                except ET.ParseError:
+                    logging.warning(f"Error parsing skills XML: {skills_xml}")
+                    skills = []
+
                 job = Job(
                     id=str(uuid.uuid4()),
-                    title=ext_job.get("jobTitle", "Unknown Title"),
-                    company=ext_job.get("companyName", "Unknown Company"),
-                    location=ext_job.get("jobLocation", "Unknown Location"),
-                    description=ext_job.get("jobDescription", "No description available")
+                    title=job_title,
+                    company="Unknown Company",  # No hay empresa en la API externa
+                    location=country,  # Uso el país como ubicación
+                    description=f"Salary: {salary}, Skills: {', '.join(skills)}"
                 )
                 results.append(job)
-    except Exception as e:
-        print(f"Error fetching external jobs: {e}")
+            else:
+                logging.warning(f"Unexpected job format: {job_entry}")  # Si hay datos inesperados
 
-    # Filtrar resultados según la búsqueda
+    # **Filtrar resultados según la búsqueda**
     if title:
         results = [job for job in results if title.lower() in job.title.lower()]
     if company:
@@ -85,7 +115,7 @@ def search_jobs(
     if location:
         results = [job for job in results if location.lower() in job.location.lower()]
 
-    return results
+    return results  # ✅ Devuelve trabajos internos + externos procesados
 
 
 
