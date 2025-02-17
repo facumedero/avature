@@ -65,8 +65,17 @@ curl -X 'POST' \
   }'
 
 
-## Ejecutar TESTS
+## Ejecutar TESTS()
 pipenv run pytest
+# Configuracion de los test en archivo pytest.ini
+
+# Para visualizar los logs es necesario definir el nivel de log
+pipenv run pytest --log-cli-level=INFO
+
+# logs mas detallados
+pipenv run pytest --log-cli-level=DEBUG
+
+
 
 #Proceso de TDD
 TDD sigue estos tres pasos:
